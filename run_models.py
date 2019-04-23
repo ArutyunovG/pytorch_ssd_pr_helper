@@ -1,0 +1,83 @@
+from caffe2.python import core, workspace
+from caffe2.proto import caffe2_pb2
+
+from google.protobuf import text_format
+
+import cv2
+import numpy as np
+
+threshold = 0.5
+
+
+def run_model(predict_path, 
+              init_path, 
+              img_shape):
+
+    img = cv2.imread('classic.jpg')
+    img = cv2.resize(img, img_shape)
+
+    inp_image = np.float32(img)
+    inp_image = np.transpose(inp_image, (2, 0, 1))
+    inp_image.shape = (1,) +  inp_image.shape
+
+
+    predict_net = caffe2_pb2.NetDef()
+    with open(predict_path, 'r') as f:
+        text_format.Parse(f.read(), predict_net)
+
+    init_net = caffe2_pb2.NetDef()
+    with open(init_path, 'rb') as f:
+        init_net.ParseFromString(f.read())
+
+    device_option = caffe2_pb2.DeviceOption()
+    device_option.device_type = workspace.GpuDeviceType
+    device_option.device_id = 0
+    init_net.device_option.CopyFrom(device_option)
+    workspace.RunNetOnce(init_net)
+
+    workspace.CreateNet(predict_net)
+
+    workspace.FeedBlob('data', inp_image, device_option = core.DeviceOption(caffe2_pb2.CUDA, 0))
+
+    im_info = np.ones(shape = (1, 3), dtype = np.float32)
+    im_info[0, 0], im_info[0, 1] = inp_image.shape[2], inp_image.shape[3]
+    workspace.FeedBlob('im_info', im_info, device_option = core.DeviceOption(caffe2_pb2.CPU, 0))
+
+    workspace.RunNet(predict_net.name)
+
+    score_nms = workspace.FetchBlob('score_nms')
+    bbox_nms = workspace.FetchBlob('bbox_nms')
+    class_nms = workspace.FetchBlob('class_nms')
+
+    for i in range(score_nms.shape[0]):
+
+        conf = score_nms[i]
+
+        if conf < threshold:
+            continue
+
+        conf = int((conf * 100) + 0.5) / 100.0
+
+        x1, y1, x2, y2 = bbox_nms[i]
+
+        cv2.rectangle(img, (x1, y1), (x2, y2), (0, 0, 255), 2)
+        cv2.putText(img,
+                    str(int(class_nms[i] + 0.5)) + ' ' + str(conf), (x1, y1), 
+                    cv2.FONT_HERSHEY_SIMPLEX, 
+                    fontScale = 1,
+                    color = (0, 255, 0),
+                    thickness = 2)
+
+    cv2.imwrite(predict_net.name + '.png', img)
+
+if __name__ == '__main__':
+
+    run_model('ConvertedModels/SSD/ssd300x300_vgg.pbtxt',
+              'ConvertedModels/SSD/ssd300x300_vgg.pb',
+              (300, 300,)
+    )
+
+    run_model('ConvertedModels/FRCNN/faster_rcnn_resnet50_coco_2018_01_28.pbtxt',
+              'ConvertedModels/FRCNN/faster_rcnn_resnet50_coco_2018_01_28.pb',
+              (600, 600,)
+    )
