@@ -10,11 +10,10 @@ threshold = 0.5
 
 
 def run_model(predict_path, 
-              init_path, 
-              img_shape):
+              init_path,
+              img_path):
 
-    img = cv2.imread('classic.jpg')
-    img = cv2.resize(img, img_shape)
+    img = cv2.imread(img_path)
 
     inp_image = np.float32(img)
     inp_image = np.transpose(inp_image, (2, 0, 1))
@@ -49,6 +48,11 @@ def run_model(predict_path,
     bbox_nms = workspace.FetchBlob('bbox_nms')
     class_nms = workspace.FetchBlob('class_nms')
 
+    # clear file contents
+    with open(predict_net.name + '_caffe2.txt', 'w') as f:
+        pass
+
+    line_idx = 0
     for i in range(score_nms.shape[0]):
 
         conf = score_nms[i]
@@ -60,24 +64,24 @@ def run_model(predict_path,
 
         x1, y1, x2, y2 = bbox_nms[i]
 
-        cv2.rectangle(img, (x1, y1), (x2, y2), (0, 0, 255), 2)
-        cv2.putText(img,
-                    str(int(class_nms[i] + 0.5)) + ' ' + str(conf), (x1, y1), 
-                    cv2.FONT_HERSHEY_SIMPLEX, 
-                    fontScale = 1,
-                    color = (0, 255, 0),
-                    thickness = 2)
+        with open(predict_net.name + '_caffe2.txt', 'a') as f:
 
-    cv2.imwrite(predict_net.name + '.png', img)
+            if line_idx > 0:
+                f.write('\n')
+            line_idx += 1
+
+            f.write(str(int(class_nms[i] + 0.5)) + ' ' + str(conf))
+            f.write(str(x1) + ' ' + str(y1) + ' ' + str(x2) + ' ' + str(y2))
+
 
 if __name__ == '__main__':
 
     run_model('ConvertedModels/SSD/ssd300x300_vgg.pbtxt',
               'ConvertedModels/SSD/ssd300x300_vgg.pb',
-              (300, 300,)
+              'classic_300x300.bmp'
     )
 
     run_model('ConvertedModels/FRCNN/faster_rcnn_resnet50_coco_2018_01_28.pbtxt',
               'ConvertedModels/FRCNN/faster_rcnn_resnet50_coco_2018_01_28.pb',
-              (600, 600,)
+              'classic_600x600.bmp'
     )
