@@ -70,7 +70,7 @@ def run_model(predict_path,
                 f.write('\n')
             line_idx += 1
 
-            f.write(str(int(class_nms[i] + 0.5)) + ' ' + str(conf))
+            f.write(str(int(class_nms[i] + 0.5)) + ' ' + str(conf) + ' ')
             f.write(str(x1) + ' ' + str(y1) + ' ' + str(x2) + ' ' + str(y2))
 
 
