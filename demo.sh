@@ -6,4 +6,4 @@ if [ ! -f "ConvertedModels.tar.gz" ]; then
 fi
 
 python run_models.py
-
+python compare_results.py
