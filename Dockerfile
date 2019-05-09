@@ -31,9 +31,38 @@ RUN cp pytorch/build/install/lib/libcaffe2.so \
     pytorch/build/install/lib/libc10_cuda.so \
     pytorch/build/install/lib/python2.7/dist-packages/caffe2/python/
 
-ENV PYTHONPATH=/pytorch/build/install/lib/python2.7/dist-packages
-
 RUN apt install -yq wget
 
-RUN git clone \
-    https://github.com/ArutyunovG/pytorch_ssd_pr_helper.git
+RUN git clone https://github.com/weiliu89/caffe.git
+
+RUN \
+    apt install -yq \
+        libprotobuf-dev \
+        libleveldb-dev \
+        libsnappy-dev \
+        libopencv-dev \
+        libhdf5-serial-dev \
+        protobuf-compiler \
+        libboost-all-dev \
+        libatlas-base-dev \
+        libgflags-dev \
+        libgoogle-glog-dev \
+        liblmdb-dev
+
+RUN cd caffe && git checkout ssd && \
+    mkdir build && cd build && \
+    cmake .. -DCMAKE_INSTALL_PREFIX=install \
+             -DCPU_ONLY=ON
+
+RUN cd caffe/build && \
+    make -j$(nproc) install
+
+RUN python -m pip install scikit-image
+
+ENV PYTHONPATH=/pytorch/build/install/lib/python2.7/dist-packages:/caffe/build/install/python
+
+RUN python -m pip install tensorflow
+
+RUN git clone https://github.com/ArutyunovG/pytorch_ssd_pr_helper.git
+
+
