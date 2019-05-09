@@ -8,8 +8,38 @@ import numpy as np
 
 threshold = 0.5
 
+class Detection(object):
 
-def run_model(predict_path, 
+    def __init__(self,
+                 label,
+                 confidence,
+                 bbox):
+
+        self.label = label
+        self.confidence = confidence
+        self.bbox = bbox
+
+    def __lt__(self, other):
+
+        return self.confidence < other.confidence
+
+def print_dets(dets, file_path):
+
+    dets.sort(reverse = True)
+    with open(file_path, 'w') as f:
+        for i, det in enumerate(dets):
+
+            if i > 0:
+                f.write('\n')
+
+            f.write(str(det.label) + ' ' + str(det.confidence))
+            
+            assert len(det.bbox) == 4
+            for coord in det.bbox:
+                f.write(' ' + str(coord))
+
+
+def run_caffe2_model(predict_path, 
               init_path,
               img_path):
 
@@ -48,11 +78,8 @@ def run_model(predict_path,
     bbox_nms = workspace.FetchBlob('bbox_nms')
     class_nms = workspace.FetchBlob('class_nms')
 
-    # clear file contents
-    with open(predict_net.name + '_caffe2.txt', 'w') as f:
-        pass
+    dets = list()
 
-    line_idx = 0
     for i in range(score_nms.shape[0]):
 
         conf = score_nms[i]
@@ -60,27 +87,25 @@ def run_model(predict_path,
         if conf < threshold:
             continue
 
-        conf = int((conf * 100) + 0.5) / 100.0
-
         x1, y1, x2, y2 = bbox_nms[i]
 
-        with open(predict_net.name + '_caffe2.txt', 'a') as f:
+        dets.append(Detection(
+                    confidence = conf,
+                    label = int(class_nms[i] + 0.5),
+                    bbox = [x1, y1, x2, y2]
+                ))
 
-            if line_idx > 0:
-                f.write('\n')
-            line_idx += 1
+    print_dets(dets, predict_net.name + '_caffe2.txt')
 
-            f.write(str(int(class_nms[i] + 0.5)) + ' ' + str(conf) + ' ')
-            f.write(str(x1) + ' ' + str(y1) + ' ' + str(x2) + ' ' + str(y2))
 
 if __name__ == '__main__':
 
-    run_model('ConvertedModels/Caffe2/SSD/ssd300x300_vgg.pbtxt',
+    run_caffe2_model('ConvertedModels/Caffe2/SSD/ssd300x300_vgg.pbtxt',
               'ConvertedModels/Caffe2/SSD/ssd300x300_vgg.pb',
               'classic_300x300.bmp'
     )
 
-    run_model('ConvertedModels/Caffe2/FRCNN/faster_rcnn_resnet50_coco_2018_01_28.pbtxt',
+    run_caffe2_model('ConvertedModels/Caffe2/FRCNN/faster_rcnn_resnet50_coco_2018_01_28.pbtxt',
               'ConvertedModels/Caffe2/FRCNN/faster_rcnn_resnet50_coco_2018_01_28.pb',
               'classic_600x600.bmp'
     )
