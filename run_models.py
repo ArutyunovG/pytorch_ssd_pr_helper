@@ -73,15 +73,14 @@ def run_model(predict_path,
             f.write(str(int(class_nms[i] + 0.5)) + ' ' + str(conf) + ' ')
             f.write(str(x1) + ' ' + str(y1) + ' ' + str(x2) + ' ' + str(y2))
 
-
 if __name__ == '__main__':
 
-    run_model('ConvertedModels/SSD/ssd300x300_vgg.pbtxt',
-              'ConvertedModels/SSD/ssd300x300_vgg.pb',
+    run_model('ConvertedModels/Caffe2/SSD/ssd300x300_vgg.pbtxt',
+              'ConvertedModels/Caffe2/SSD/ssd300x300_vgg.pb',
               'classic_300x300.bmp'
     )
 
-    run_model('ConvertedModels/FRCNN/faster_rcnn_resnet50_coco_2018_01_28.pbtxt',
-              'ConvertedModels/FRCNN/faster_rcnn_resnet50_coco_2018_01_28.pb',
+    run_model('ConvertedModels/Caffe2/FRCNN/faster_rcnn_resnet50_coco_2018_01_28.pbtxt',
+              'ConvertedModels/Caffe2/FRCNN/faster_rcnn_resnet50_coco_2018_01_28.pb',
               'classic_600x600.bmp'
     )
