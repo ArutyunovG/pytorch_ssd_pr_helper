@@ -25,8 +25,7 @@ RUN cd pytorch && \
 
 RUN python -m pip install protobuf future
 
-RUN cp pytorch/build/install/lib/libcaffe2.so \
-    pytorch/build/install/lib/libcaffe2_gpu.so \
+RUN cp pytorch/build/install/lib/libtorch.so \
     pytorch/build/install/lib/libc10.so \
     pytorch/build/install/lib/libc10_cuda.so \
     pytorch/build/install/lib/python2.7/dist-packages/caffe2/python/
